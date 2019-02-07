@@ -1,24 +1,22 @@
-
-var pm2       = require('pm2');
-var SysLogger = require('ain2');
-var logger    = new SysLogger({tag: 'pm2',  facility: 'syslog'});
+const pm2 = require('pm2');
+const SysLogger = require('ain2');
+const logger = new SysLogger();
 
 pm2.launchBus(function(err, bus) {
-  bus.on('*', function(event, data){
-    if (event == 'process:event') {
-      logger.warn('app=pm2 target_app=%s target_id=%s restart_count=%s status=%s',
-                  data.process.name,
-                  data.process.pm_id,
-                  data.process.restart_time,
-                  data.event);
+  bus.on('*', function(event, { data, process }) {
+    if (event === 'process:event') {
+      logger.set({ facility: 'local0', tag: process.name });
+      logger.warn(data);
     }
   });
 
-  bus.on('log:err', function(data) {
-    logger.error('app=%s id=%s line=%s', data.process.name, data.process.pm_id, data.data);
+  bus.on('log:err', function({ data, process }) {
+    logger.set({ facility: 'local0', tag: process.name });
+    logger.error(data);
   });
 
-  bus.on('log:out', function(data) {
-    logger.log('app=%s id=%s line=%s', data.process.name, data.process.pm_id, data.data);
+  bus.on('log:out', function({ data, process }) {
+    logger.set({ facility: 'local0', tag: process.name });
+    logger.log(data);
   });
 });
